@@ -13,9 +13,9 @@ Set these **in Supabase**, not in the frontend `.env` file:
 
 Optional:
 
-| Secret            | Purpose                                                                                                |
-| ----------------- | ------------------------------------------------------------------------------------------------------ |
-| `ALLOWED_ORIGINS` | Comma-separated browser origins permitted by CORS. Defaults to `https://pixely-snap-show.lovable.app`. |
+| Secret            | Purpose                                                                                                                           |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `ALLOWED_ORIGINS` | Comma-separated browser origins permitted by CORS. Defaults to `https://income.vektiss.com,https://pixely-snap-show.lovable.app`. |
 
 `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are supplied to hosted Supabase Edge Functions automatically. The service role is used only inside the function to load the lead/assessment and write private delivery logs; it is never sent to the browser.
 

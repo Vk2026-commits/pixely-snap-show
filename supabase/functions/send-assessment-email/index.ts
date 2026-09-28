@@ -17,8 +17,9 @@ type AssessmentRecord = {
     | null;
 };
 
-const defaultOrigin = "https://pixely-snap-show.lovable.app";
-const trustedOrigins = (Deno.env.get("ALLOWED_ORIGINS") ?? defaultOrigin)
+const defaultOrigin = "https://income.vektiss.com";
+const defaultOrigins = [defaultOrigin, "https://pixely-snap-show.lovable.app"];
+const trustedOrigins = (Deno.env.get("ALLOWED_ORIGINS") ?? defaultOrigins.join(","))
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
