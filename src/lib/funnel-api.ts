@@ -1,5 +1,9 @@
 /**
  * Supabase persistence for the funnel. Kept separate from scoring + UI.
+ *
+ * All writes go through SECURITY DEFINER helpers (see supabase/schema.sql):
+ * upsert_lead, create_income_assessment, join_waitlist. The tables have no
+ * SELECT policy, so the app must not use .select()/returning on them.
  */
 import { supabase, supabaseConfigured } from "@/lib/supabase";
 import type { Attribution } from "@/lib/attribution";
@@ -38,27 +42,22 @@ export async function submitAssessment(params: {
 
   try {
     // Upsert on normalized email: one lead, many assessments. No public read access needed.
-    const { data: lead, error: leadErr } = await supabase
-      .from("leads")
-      .upsert(
-        {
-          first_name: params.lead.first_name.trim(),
-          email,
-          phone: params.lead.phone.trim(),
-          current_job: params.lead.current_job.trim(),
-          ...params.attribution,
-        },
-        { onConflict: "email" },
-      )
-      .select("id")
-      .single();
+    const { data: leadId, error: leadErr } = await supabase.rpc("upsert_lead", {
+      p_lead: {
+        first_name: params.lead.first_name.trim(),
+        email,
+        phone: params.lead.phone.trim(),
+        current_job: params.lead.current_job.trim(),
+        ...params.attribution,
+      },
+    });
     if (leadErr) throw leadErr;
-    const leadId = lead.id as string;
+    if (!leadId) throw new Error("Lead save returned no id.");
 
-    const { data: assessment, error: aErr } = await supabase
-      .from("income_assessments")
-      .insert({
+    const { data: assessmentId, error: aErr } = await supabase.rpc("create_income_assessment", {
+      p_assessment: {
         lead_id: leadId,
+        funnel: "ai_income_path_finder",
         income_goal: params.answers["income_goal"] ?? null,
         weekly_time_available: params.answers["weekly_time_available"] ?? null,
         selected_skills: params.answers["selected_skills"] ?? [],
@@ -73,12 +72,12 @@ export async function submitAssessment(params: {
         product_builder_score: Math.round(params.scores.product_builder),
         calculated_path: params.path,
         result_summary: params.summary,
-      })
-      .select("id")
-      .single();
+      },
+    });
     if (aErr) throw aErr;
+    if (!assessmentId) throw new Error("Assessment save returned no id.");
 
-    return { leadId, assessmentId: assessment.id as string, persisted: true };
+    return { leadId, assessmentId, persisted: true };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Could not save your answers.";
     return { leadId: null, assessmentId: null, persisted: false, error: message };
@@ -87,12 +86,10 @@ export async function submitAssessment(params: {
 
 export async function joinWaitlist(leadId: string | null, assessmentId: string | null) {
   if (!supabaseConfigured || !leadId) return { ok: false, error: "Not saved." };
-  const { error } = await supabase
-    .from("webinar_waitlist")
-    .upsert(
-      { lead_id: leadId, assessment_id: assessmentId, status: "waiting" },
-      { onConflict: "lead_id" },
-    );
+  const { error } = await supabase.rpc("join_waitlist", {
+    p_lead_id: leadId,
+    p_assessment_id: assessmentId,
+  });
   if (error) return { ok: false, error: error.message };
   return { ok: true };
 }
