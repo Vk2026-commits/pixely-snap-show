@@ -35,7 +35,12 @@ export async function submitAssessment(params: {
   summary: string;
 }): Promise<SubmitResult> {
   if (!supabaseConfigured) {
-    return { leadId: null, assessmentId: null, persisted: false, error: "Supabase is not configured." };
+    return {
+      leadId: null,
+      assessmentId: null,
+      persisted: false,
+      error: "Supabase is not configured.",
+    };
   }
 
   const email = normalizeEmail(params.lead.email);
@@ -91,5 +96,28 @@ export async function joinWaitlist(leadId: string | null, assessmentId: string |
     p_assessment_id: assessmentId,
   });
   if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
+/**
+ * Sends the plan through the protected Edge Function after its data is saved.
+ * The function receives IDs only and looks up the recipient server-side.
+ */
+export async function sendAssessmentEmail(leadId: string | null, assessmentId: string | null) {
+  if (!supabaseConfigured || !leadId || !assessmentId) {
+    return { ok: false, error: "Your plan was not saved yet." };
+  }
+
+  const { data, error } = await supabase.functions.invoke<{
+    ok?: boolean;
+    error?: string;
+  }>("send-assessment-email", {
+    body: { leadId, assessmentId },
+  });
+
+  if (error || !data?.ok) {
+    return { ok: false, error: data?.error ?? error?.message ?? "Email delivery failed." };
+  }
+
   return { ok: true };
 }

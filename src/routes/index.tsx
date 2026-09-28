@@ -5,7 +5,12 @@ import { ArrowRight } from "lucide-react";
 import { brandCopy, questions, stages, type Question } from "@/content/assessment";
 import { buildSummary, scoreAssessment, type Answers } from "@/lib/scoring";
 import { captureAttribution, type Attribution } from "@/lib/attribution";
-import { joinWaitlist, submitAssessment, type LeadInput } from "@/lib/funnel-api";
+import {
+  joinWaitlist,
+  sendAssessmentEmail,
+  submitAssessment,
+  type LeadInput,
+} from "@/lib/funnel-api";
 import { SiteHeader } from "@/components/funnel/SiteHeader";
 import { ProgressIndicator } from "@/components/funnel/ProgressIndicator";
 import { AssessmentQuestion } from "@/components/funnel/AssessmentQuestion";
@@ -101,8 +106,7 @@ function PathFinder() {
     [answers, result.path, labelOf],
   );
 
-  const scrollTop = () =>
-    topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  const scrollTop = () => topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
 
   const handleNext = () => {
     if (step === questions.length - 1) {
@@ -131,13 +135,20 @@ function PathFinder() {
       path: result.path,
       summary,
     });
-    setSubmitting(false);
     setIds({ leadId: res.leadId, assessmentId: res.assessmentId });
     if (!res.persisted) {
-      setServerError(
-        "We couldn't save your details right now, but your plan is ready below.",
-      );
+      setServerError("We couldn't save your details right now, but your plan is ready below.");
+    } else {
+      try {
+        const emailResult = await sendAssessmentEmail(res.leadId, res.assessmentId);
+        if (!emailResult.ok) {
+          setServerError("Your plan is ready below, but we couldn't email a copy just yet.");
+        }
+      } catch {
+        setServerError("Your plan is ready below, but we couldn't email a copy just yet.");
+      }
     }
+    setSubmitting(false);
     setStage("result");
     scrollTop();
   };
@@ -244,7 +255,9 @@ function PathFinder() {
             pending={waitlist.pending}
             error={waitlist.error}
           />
-          {serverError && <p className="text-center text-xs text-muted-foreground">{serverError}</p>}
+          {serverError && (
+            <p className="text-center text-xs text-muted-foreground">{serverError}</p>
+          )}
         </section>
       )}
 
