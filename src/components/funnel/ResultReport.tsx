@@ -207,7 +207,7 @@ export function WaitlistCTA({
   onJoin: () => void;
   joined: boolean;
   pending: boolean;
-  error?: string | null;
+  error?: string | null | undefined;
 }) {
   return (
     <div className="panel relative overflow-hidden rounded-2xl p-7 sm:p-10">

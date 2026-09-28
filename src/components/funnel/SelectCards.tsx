@@ -84,7 +84,7 @@ export function ScaleSelect({
   max: number;
   minLabel: string;
   maxLabel: string;
-  value?: number;
+  value?: number | undefined;
   onSelect: (v: number) => void;
 }) {
   const values = Array.from({ length: max - min + 1 }, (_, i) => min + i);

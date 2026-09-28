@@ -16,7 +16,7 @@ export function LeadCapture({
 }: {
   onSubmit: (lead: LeadInput) => void;
   submitting: boolean;
-  serverError?: string | null;
+  serverError?: string | null | undefined;
 }) {
   const [values, setValues] = useState<LeadInput>({
     first_name: "",

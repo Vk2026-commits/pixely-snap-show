@@ -12,8 +12,8 @@ export function AssessmentNavigation({
   onNext: () => void;
   canGoBack: boolean;
   canGoNext: boolean;
-  nextLabel?: string;
-  optionalSkip?: boolean;
+  nextLabel?: string | undefined;
+  optionalSkip?: boolean | undefined;
 }) {
   return (
     <div className="mt-8 flex items-center gap-3">
