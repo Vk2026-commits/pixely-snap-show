@@ -89,7 +89,10 @@ export async function joinWaitlist(leadId: string | null, assessmentId: string |
   if (!supabaseConfigured || !leadId) return { ok: false, error: "Not saved." };
   const { error } = await supabase
     .from("webinar_waitlist")
-    .insert({ lead_id: leadId, assessment_id: assessmentId, status: "waiting" });
+    .upsert(
+      { lead_id: leadId, assessment_id: assessmentId, status: "waiting" },
+      { onConflict: "lead_id" },
+    );
   if (error) return { ok: false, error: error.message };
   return { ok: true };
 }
