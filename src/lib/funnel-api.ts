@@ -37,29 +37,23 @@ export async function submitAssessment(params: {
   const email = normalizeEmail(params.lead.email);
 
   try {
-    const { data: existing } = await supabase
+    // Upsert on normalized email: one lead, many assessments. No public read access needed.
+    const { data: lead, error: leadErr } = await supabase
       .from("leads")
-      .select("id")
-      .eq("email", email)
-      .maybeSingle();
-
-    let leadId = existing?.id as string | undefined;
-
-    if (!leadId) {
-      const { data: inserted, error } = await supabase
-        .from("leads")
-        .insert({
+      .upsert(
+        {
           first_name: params.lead.first_name.trim(),
           email,
           phone: params.lead.phone.trim(),
           current_job: params.lead.current_job.trim(),
           ...params.attribution,
-        })
-        .select("id")
-        .single();
-      if (error) throw error;
-      leadId = inserted.id as string;
-    }
+        },
+        { onConflict: "email" },
+      )
+      .select("id")
+      .single();
+    if (leadErr) throw leadErr;
+    const leadId = lead.id as string;
 
     const { data: assessment, error: aErr } = await supabase
       .from("income_assessments")
@@ -84,7 +78,7 @@ export async function submitAssessment(params: {
       .single();
     if (aErr) throw aErr;
 
-    return { leadId: leadId!, assessmentId: assessment.id as string, persisted: true };
+    return { leadId, assessmentId: assessment.id as string, persisted: true };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Could not save your answers.";
     return { leadId: null, assessmentId: null, persisted: false, error: message };

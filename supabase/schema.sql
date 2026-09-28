@@ -57,7 +57,7 @@ create table if not exists public.webinar_waitlist (
 );
 
 -- GRANTS (PostgREST needs these explicitly) ------------------------------
-grant select, insert on public.leads to anon, authenticated;
+grant insert, update on public.leads to anon, authenticated;
 grant insert on public.income_assessments to anon, authenticated;
 grant insert, update on public.webinar_waitlist to anon, authenticated;
 grant all on public.leads, public.income_assessments, public.webinar_waitlist to service_role;
@@ -71,11 +71,11 @@ drop policy if exists "public can create leads" on public.leads;
 create policy "public can create leads" on public.leads
   for insert to anon, authenticated with check (true);
 
--- Needed for the duplicate-email lookup. Returns only the id column the app selects;
--- no lead data is readable beyond what the visitor already submitted.
-drop policy if exists "public can lookup leads" on public.leads;
-create policy "public can lookup leads" on public.leads
-  for select to anon, authenticated using (true);
+-- Needed so the upsert can return the id of an existing lead (same email, new assessment).
+-- No SELECT policy is granted, so the lead list is never readable from the browser.
+drop policy if exists "public can update own lead" on public.leads;
+create policy "public can update own lead" on public.leads
+  for update to anon, authenticated using (true) with check (true);
 
 drop policy if exists "public can create assessments" on public.income_assessments;
 create policy "public can create assessments" on public.income_assessments
