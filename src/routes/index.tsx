@@ -44,14 +44,14 @@ export const Route = createFileRoute("/")({
       { property: "og:url", content: "https://income.vektiss.com/" },
       {
         property: "og:image",
-        content: "https://income.vektiss.com/og-cover.png",
+        content: "https://income.vektiss.com/og-cover.jpg",
       },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: TITLE },
       { name: "twitter:description", content: DESCRIPTION },
       {
         name: "twitter:image",
-        content: "https://income.vektiss.com/og-cover.png",
+        content: "https://income.vektiss.com/og-cover.jpg",
       },
     ],
     links: [{ rel: "canonical", href: "https://income.vektiss.com/" }],
