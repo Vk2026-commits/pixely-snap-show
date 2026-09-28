@@ -22,6 +22,26 @@ create table if not exists public.leads (
   updated_at timestamptz not null default now()
 );
 
+
+-- Idempotent column adds (safe if a `leads` table already exists from another funnel).
+alter table public.leads
+  add column if not exists first_name text,
+  add column if not exists email text,
+  add column if not exists phone text,
+  add column if not exists current_job text,
+  add column if not exists utm_source text,
+  add column if not exists utm_medium text,
+  add column if not exists utm_campaign text,
+  add column if not exists utm_content text,
+  add column if not exists utm_term text,
+  add column if not exists referral_url text,
+  add column if not exists landing_page_url text,
+  add column if not exists comment_keyword text,
+  add column if not exists created_at timestamptz not null default now(),
+  add column if not exists updated_at timestamptz not null default now();
+
+create unique index if not exists leads_email_key on public.leads (email);
+
 -- ASSESSMENTS -----------------------------------------------------------
 create table if not exists public.income_assessments (
   id uuid primary key default gen_random_uuid(),
