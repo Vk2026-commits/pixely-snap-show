@@ -70,11 +70,29 @@ function pathName(path: string | null) {
   return names[path ?? ""] ?? "AI Income Path";
 }
 
+function buildWebinarRegistrationUrl(
+  baseUrl: string | undefined,
+  leadId: string,
+  assessmentId: string,
+) {
+  if (!baseUrl) return null;
+  try {
+    const url = new URL(baseUrl);
+    if (url.protocol !== "https:") return null;
+    url.searchParams.set("lead_id", leadId);
+    url.searchParams.set("assessment_id", assessmentId);
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
 function emailBody(params: {
   firstName: string;
   path: string;
   incomeGoal: string | null;
   summary: string | null;
+  webinarRegistrationUrl: string | null;
 }) {
   const firstName = escapeHtml(params.firstName.trim() || "there");
   const path = escapeHtml(params.path);
@@ -86,6 +104,21 @@ function emailBody(params: {
   const goalLine = incomeGoal
     ? `<p style="margin:0 0 20px;color:#5d6472;font-size:15px;line-height:1.6">Your income goal: <strong style="color:#182033">${incomeGoal}</strong></p>`
     : "";
+  const webinarSection = params.webinarRegistrationUrl
+    ? `<div style="margin:28px 0 0;padding:22px;border-radius:12px;background:#0f1f3d">
+                <p style="margin:0;color:#9fd4ff;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase">Live online training</p>
+                <p style="margin:10px 0 0;color:#ffffff;font-size:19px;font-weight:700;line-height:1.35">Build Your First AI Income Stream</p>
+                <p style="margin:10px 0 18px;color:#dbeafe;font-size:14px;line-height:1.6">Join Ricky Rose live every Sunday at 7:00 PM Central to turn your personalized path into practical next steps.</p>
+                <table role="presentation" cellspacing="0" cellpadding="0"><tr><td style="border-radius:8px;background:#1674c4"><a href="${escapeHtml(params.webinarRegistrationUrl)}" style="display:inline-block;padding:13px 18px;color:#ffffff;font-size:14px;font-weight:700;line-height:1;text-decoration:none">Reserve your free seat</a></td></tr></table>
+              </div>`
+    : "";
+  const webinarText = params.webinarRegistrationUrl
+    ? [
+        "",
+        "Join Ricky Rose live every Sunday at 7:00 PM Central: Build Your First AI Income Stream.",
+        `Reserve your free seat: ${params.webinarRegistrationUrl}`,
+      ]
+    : [];
 
   const html = `<!doctype html>
 <html lang="en">
@@ -103,6 +136,7 @@ function emailBody(params: {
             </div>
             ${goalLine}
             <p style="margin:0;color:#343b4a;font-size:16px;line-height:1.7">${summary}</p>
+            ${webinarSection}
             <p style="margin:28px 0 0;color:#5d6472;font-size:14px;line-height:1.6">Keep this email handy as you work through the personalized plan displayed after your assessment.</p>
           </td></tr>
           <tr><td style="padding:20px 32px;background:#f4f6f8"><p style="margin:0;color:#6b7280;font-size:12px;line-height:1.5">You received this email because you requested an AI Income Path Finder plan.</p></td></tr>
@@ -122,6 +156,7 @@ function emailBody(params: {
     "",
     params.summary?.trim() ||
       "Your answers point to a practical path that matches your goals and current strengths.",
+    ...webinarText,
     "",
     "Keep this email handy as you work through the personalized plan displayed after your assessment.",
   ].join("\n");
@@ -142,6 +177,7 @@ Deno.serve(async (request) => {
 
   const resendApiKey = Deno.env.get("RESEND_API_KEY");
   const resendFromEmail = Deno.env.get("RESEND_FROM_EMAIL");
+  const webinarRegistrationBaseUrl = Deno.env.get("WEBINAR_REGISTRATION_URL");
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
@@ -206,6 +242,11 @@ Deno.serve(async (request) => {
       path: pathName(assessment.calculated_path),
       incomeGoal: assessment.income_goal,
       summary: assessment.result_summary,
+      webinarRegistrationUrl: buildWebinarRegistrationUrl(
+        webinarRegistrationBaseUrl,
+        assessment.lead_id,
+        assessment.id,
+      ),
     });
 
     const resendResponse = await fetch("https://api.resend.com/emails", {
