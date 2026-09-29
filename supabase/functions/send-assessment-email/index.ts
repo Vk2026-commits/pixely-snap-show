@@ -71,6 +71,17 @@ function pathName(path: string | null) {
   return names[path ?? ""] ?? "AI Income Path";
 }
 
+function incomeGoalLabel(value: string | null) {
+  const labels: Record<string, string> = {
+    "500_1000": "$500–$1,000",
+    "1000_3000": "$1,000–$3,000",
+    "3000_5000": "$3,000–$5,000",
+    "5000_10000": "$5,000–$10,000",
+    "10000_plus": "$10,000+",
+  };
+  return labels[value ?? ""] ?? value ?? "";
+}
+
 function buildWebinarRegistrationUrl(leadId: string, assessmentId: string) {
   const url = new URL(officialWebinarUrl);
   url.searchParams.set("lead_id", leadId);
@@ -90,7 +101,7 @@ function emailBody(params: {
 }) {
   const firstName = escapeHtml(params.firstName.trim() || "there");
   const path = escapeHtml(params.path);
-  const incomeGoal = params.incomeGoal ? escapeHtml(params.incomeGoal) : null;
+  const incomeGoal = params.incomeGoal ? escapeHtml(incomeGoalLabel(params.incomeGoal)) : null;
   const summary = escapeHtml(
     params.summary?.trim() ||
       "Your answers point to a practical path that matches your goals and current strengths.",
@@ -146,7 +157,7 @@ function emailBody(params: {
     "Your AI Income Path Finder plan is ready.",
     "",
     `Recommended AI income path: ${params.path}`,
-    ...(params.incomeGoal ? [`Income goal: ${params.incomeGoal}`] : []),
+    ...(params.incomeGoal ? [`Income goal: ${incomeGoalLabel(params.incomeGoal)}`] : []),
     "",
     params.summary?.trim() ||
       "Your answers point to a practical path that matches your goals and current strengths.",
