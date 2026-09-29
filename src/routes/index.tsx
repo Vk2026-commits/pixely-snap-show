@@ -5,12 +5,7 @@ import { ArrowRight } from "lucide-react";
 import { brandCopy, questions, stages, type Question } from "@/content/assessment";
 import { buildSummary, scoreAssessment, type Answers } from "@/lib/scoring";
 import { captureAttribution, type Attribution } from "@/lib/attribution";
-import {
-  joinWaitlist,
-  sendAssessmentEmail,
-  submitAssessment,
-  type LeadInput,
-} from "@/lib/funnel-api";
+import { sendAssessmentEmail, submitAssessment, type LeadInput } from "@/lib/funnel-api";
 import { SiteHeader } from "@/components/funnel/SiteHeader";
 import { ProgressIndicator } from "@/components/funnel/ProgressIndicator";
 import { AssessmentQuestion } from "@/components/funnel/AssessmentQuestion";
@@ -26,12 +21,22 @@ import {
   ResultHeader,
   WaitlistCTA,
   WhyThisFits,
-  useWaitlist,
 } from "@/components/funnel/ResultReport";
 
 const TITLE = "AI Income Path Finder — Find Your Best AI Income Path";
 const DESCRIPTION =
   "A 3-minute personalized assessment that shows which AI income path fits your goal, skills and available time — and exactly what to do first.";
+const WEBINAR_URL = "https://webinar.vektiss.com/";
+
+function buildWebinarRegistrationUrl(leadId: string | null, assessmentId: string | null) {
+  const url = new URL(WEBINAR_URL);
+  if (leadId) url.searchParams.set("lead_id", leadId);
+  if (assessmentId) url.searchParams.set("assessment_id", assessmentId);
+  url.searchParams.set("plan_url", "https://income.vektiss.com/");
+  url.searchParams.set("utm_source", "ai_income_path_finder");
+  url.searchParams.set("utm_medium", "assessment_result");
+  return url.toString();
+}
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -165,7 +170,10 @@ function PathFinder() {
     scrollTop();
   };
 
-  const waitlist = useWaitlist(() => joinWaitlist(ids.leadId, ids.assessmentId));
+  const webinarUrl = useMemo(
+    () => buildWebinarRegistrationUrl(ids.leadId, ids.assessmentId),
+    [ids.assessmentId, ids.leadId],
+  );
 
   const stageIndex = stages.indexOf(current.stage);
   const progress =
@@ -261,12 +269,7 @@ function PathFinder() {
           </div>
           <NextSteps path={result.path} />
           <AvoidSection path={result.path} />
-          <WaitlistCTA
-            onJoin={waitlist.onJoin}
-            joined={waitlist.joined}
-            pending={waitlist.pending}
-            error={waitlist.error}
-          />
+          <WaitlistCTA webinarUrl={webinarUrl} />
           {serverError && (
             <p className="text-center text-xs text-muted-foreground">{serverError}</p>
           )}

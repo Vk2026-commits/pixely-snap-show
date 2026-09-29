@@ -1,6 +1,5 @@
-import { useState } from "react";
-import { ArrowRight, Ban, Check, Loader2, Target } from "lucide-react";
-import { brandCopy, paths, pathOrder, type PathId } from "@/content/assessment";
+import { ArrowRight, Ban, Target } from "lucide-react";
+import { paths, pathOrder, type PathId } from "@/content/assessment";
 import type { Scores } from "@/lib/scoring";
 
 export function PathProgression({ current }: { current: PathId }) {
@@ -13,9 +12,7 @@ export function PathProgression({ current }: { current: PathId }) {
             <div
               className={[
                 "flex-1 rounded-xl border px-4 py-3 transition-all",
-                active
-                  ? "border-primary bg-primary/10 glow-ring"
-                  : "border-border bg-card/50",
+                active ? "border-primary bg-primary/10 glow-ring" : "border-border bg-card/50",
               ].join(" ")}
             >
               <p
@@ -198,55 +195,36 @@ export function AvoidSection({ path }: { path: PathId }) {
   );
 }
 
-export function WaitlistCTA({
-  onJoin,
-  joined,
-  pending,
-  error,
-}: {
-  onJoin: () => void;
-  joined: boolean;
-  pending: boolean;
-  error?: string | null | undefined;
-}) {
+export function WaitlistCTA({ webinarUrl }: { webinarUrl: string }) {
   return (
     <div className="panel relative overflow-hidden rounded-2xl p-7 sm:p-10">
       <div
         className="pointer-events-none absolute -right-24 -top-24 size-64 rounded-full opacity-40 blur-3xl"
         style={{ background: "color-mix(in oklab, var(--primary) 45%, transparent)" }}
       />
-      {joined ? (
-        <div className="relative animate-rise">
-          <div className="flex size-11 items-center justify-center rounded-full bg-primary">
-            <Check className="size-5 text-primary-foreground" strokeWidth={3} />
-          </div>
-          <h3 className="mt-5 text-2xl font-bold sm:text-3xl">
-            {brandCopy.waitlist.confirmHeading}
-          </h3>
-          <p className="mt-2 text-muted-foreground">{brandCopy.waitlist.confirmBody}</p>
-        </div>
-      ) : (
-        <div className="relative">
-          <h3 className="max-w-2xl text-[26px] font-bold leading-tight sm:text-4xl">
-            {brandCopy.waitlist.heading}
-          </h3>
-          <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-muted-foreground sm:text-base">
-            {brandCopy.waitlist.body}
-          </p>
-          <button
-            type="button"
-            onClick={onJoin}
-            disabled={pending}
-            className="mt-7 flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-primary px-8 text-base font-semibold text-primary-foreground transition-all hover:brightness-110 disabled:opacity-60 sm:w-auto"
-            style={{ boxShadow: "0 16px 40px -18px color-mix(in oklab, var(--primary) 90%, transparent)" }}
-          >
-            {pending && <Loader2 className="size-5 animate-spin" />}
-            {brandCopy.waitlist.cta}
-            {!pending && <ArrowRight className="size-4" />}
-          </button>
-          {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
-        </div>
-      )}
+      <div className="relative">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">
+          Your next step
+        </p>
+        <h3 className="mt-3 max-w-2xl text-[26px] font-bold leading-tight sm:text-4xl">
+          Bring Your AI Income Plan to Life.
+        </h3>
+        <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-muted-foreground sm:text-base">
+          Read through your personalized result first—especially your recommended path, next 3
+          moves, and what not to focus on yet. Then join Ricky Rose live for Build Your First AI
+          Income Stream and turn that clarity into a practical next step.
+        </p>
+        <a
+          href={webinarUrl}
+          className="mt-7 flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-primary px-8 text-base font-semibold text-primary-foreground transition-all hover:brightness-110 sm:w-auto"
+          style={{
+            boxShadow: "0 16px 40px -18px color-mix(in oklab, var(--primary) 90%, transparent)",
+          }}
+        >
+          Register for the free live training
+          <ArrowRight className="size-4" />
+        </a>
+      </div>
     </div>
   );
 }
@@ -260,21 +238,4 @@ export function WhyThisFits({ summary }: { summary: string }) {
       <p className="mt-4 text-[17px] leading-relaxed sm:text-xl">{summary}</p>
     </div>
   );
-}
-
-export function useWaitlist(join: () => Promise<{ ok: boolean; error?: string }>) {
-  const [joined, setJoined] = useState(false);
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const onJoin = async () => {
-    setPending(true);
-    setError(null);
-    const res = await join();
-    setPending(false);
-    if (res.ok) setJoined(true);
-    else setError(res.error ?? "Something went wrong. Please try again.");
-  };
-
-  return { joined, pending, error, onJoin };
 }

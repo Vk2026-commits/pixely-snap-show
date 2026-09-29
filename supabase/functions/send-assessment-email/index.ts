@@ -19,6 +19,7 @@ type AssessmentRecord = {
 
 const defaultOrigin = "https://income.vektiss.com";
 const defaultOrigins = [defaultOrigin, "https://pixely-snap-show.lovable.app"];
+const officialWebinarUrl = "https://webinar.vektiss.com/";
 const trustedOrigins = (Deno.env.get("ALLOWED_ORIGINS") ?? defaultOrigins.join(","))
   .split(",")
   .map((origin) => origin.trim())
@@ -70,21 +71,14 @@ function pathName(path: string | null) {
   return names[path ?? ""] ?? "AI Income Path";
 }
 
-function buildWebinarRegistrationUrl(
-  baseUrl: string | undefined,
-  leadId: string,
-  assessmentId: string,
-) {
-  if (!baseUrl) return null;
-  try {
-    const url = new URL(baseUrl);
-    if (url.protocol !== "https:") return null;
-    url.searchParams.set("lead_id", leadId);
-    url.searchParams.set("assessment_id", assessmentId);
-    return url.toString();
-  } catch {
-    return null;
-  }
+function buildWebinarRegistrationUrl(leadId: string, assessmentId: string) {
+  const url = new URL(officialWebinarUrl);
+  url.searchParams.set("lead_id", leadId);
+  url.searchParams.set("assessment_id", assessmentId);
+  url.searchParams.set("plan_url", defaultOrigin);
+  url.searchParams.set("utm_source", "ai_income_path_finder");
+  url.searchParams.set("utm_medium", "result_email");
+  return url.toString();
 }
 
 function emailBody(params: {
@@ -107,16 +101,16 @@ function emailBody(params: {
   const webinarSection = params.webinarRegistrationUrl
     ? `<div style="margin:28px 0 0;padding:22px;border-radius:12px;background:#0f1f3d">
                 <p style="margin:0;color:#9fd4ff;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase">Live online training</p>
-                <p style="margin:10px 0 0;color:#ffffff;font-size:19px;font-weight:700;line-height:1.35">Build Your First AI Income Stream</p>
-                <p style="margin:10px 0 18px;color:#dbeafe;font-size:14px;line-height:1.6">Join Ricky Rose live every Sunday at 7:00 PM Central to turn your personalized path into practical next steps.</p>
-                <table role="presentation" cellspacing="0" cellpadding="0"><tr><td style="border-radius:8px;background:#1674c4"><a href="${escapeHtml(params.webinarRegistrationUrl)}" style="display:inline-block;padding:13px 18px;color:#ffffff;font-size:14px;font-weight:700;line-height:1;text-decoration:none">Reserve your free seat</a></td></tr></table>
+                <p style="margin:10px 0 0;color:#ffffff;font-size:19px;font-weight:700;line-height:1.35">Your plan is only the beginning.</p>
+                <p style="margin:10px 0 18px;color:#dbeafe;font-size:14px;line-height:1.6">Read through your result—especially your recommended path, next 3 moves, and what not to focus on yet. Then join Ricky Rose live for Build Your First AI Income Stream and turn that clarity into a practical next step.</p>
+                <table role="presentation" cellspacing="0" cellpadding="0"><tr><td style="border-radius:8px;background:#1674c4"><a href="${escapeHtml(params.webinarRegistrationUrl)}" style="display:inline-block;padding:13px 18px;color:#ffffff;font-size:14px;font-weight:700;line-height:1;text-decoration:none">Register for the free live training</a></td></tr></table>
               </div>`
     : "";
   const webinarText = params.webinarRegistrationUrl
     ? [
         "",
-        "Join Ricky Rose live every Sunday at 7:00 PM Central: Build Your First AI Income Stream.",
-        `Reserve your free seat: ${params.webinarRegistrationUrl}`,
+        "Read your recommended path, next 3 moves, and what not to focus on yet. Then join Ricky Rose live for Build Your First AI Income Stream.",
+        `Register for the free live training: ${params.webinarRegistrationUrl}`,
       ]
     : [];
 
@@ -177,7 +171,6 @@ Deno.serve(async (request) => {
 
   const resendApiKey = Deno.env.get("RESEND_API_KEY");
   const resendFromEmail = Deno.env.get("RESEND_FROM_EMAIL");
-  const webinarRegistrationBaseUrl = Deno.env.get("WEBINAR_REGISTRATION_URL");
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
@@ -242,11 +235,7 @@ Deno.serve(async (request) => {
       path: pathName(assessment.calculated_path),
       incomeGoal: assessment.income_goal,
       summary: assessment.result_summary,
-      webinarRegistrationUrl: buildWebinarRegistrationUrl(
-        webinarRegistrationBaseUrl,
-        assessment.lead_id,
-        assessment.id,
-      ),
+      webinarRegistrationUrl: buildWebinarRegistrationUrl(assessment.lead_id, assessment.id),
     });
 
     const resendResponse = await fetch("https://api.resend.com/emails", {
